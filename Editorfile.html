@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carpeta — buscador y renombrador local</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14161a;
+    --surface:#1c1f24;
+    --surface-2:#22262c;
+    --border:#2c3038;
+    --text:#e9e7e1;
+    --text-muted:#8b8f98;
+    --accent:#d4622a;
+    --accent-bright:#ff7a3d;
+    --ok:#4a9d6f;
+    --err:#d4574a;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+  }
+  .tab{
+    max-width:1000px;
+    margin:0 auto;
+    padding:28px 32px 0;
+  }
+  .tab-label{
+    display:inline-block;
+    background:var(--accent);
+    color:#191a1c;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:600;
+    font-size:12px;
+    letter-spacing:.06em;
+    padding:6px 14px 5px;
+    border-radius:4px 4px 0 0;
+    text-transform:uppercase;
+  }
+  header{
+    max-width:1000px;
+    margin:0 auto;
+    padding:22px 32px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    border-radius:0 8px 8px 8px;
+  }
+  h1{
+    font-size:20px;
+    margin:0 0 4px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--text-muted);
+    font-size:13px;
+    margin:0;
+  }
+  .controls{
+    max-width:1000px;
+    margin:0 auto;
+    padding:18px 32px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  button{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    padding:9px 16px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:#454a52;}
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#191a1c;
+  }
+  button.primary:hover{background:var(--accent-bright);border-color:var(--accent-bright);}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  input[type="text"]{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px 12px;
+    border-radius:var(--radius);
+    outline:none;
+  }
+  input[type="text"]:focus{border-color:var(--accent);}
+  #search{flex:1;min-width:180px;}
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-muted);
+    user-select:none;
+    cursor:pointer;
+  }
+  .path{
+    max-width:1000px;
+    margin:0 auto;
+    padding:0 32px 6px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .path b{color:var(--accent-bright);font-weight:600;}
+  main{
+    max-width:1000px;
+    margin:0 auto;
+    padding:8px 32px 60px;
+  }
+  .empty{
+    text-align:center;
+    color:var(--text-muted);
+    padding:70px 20px;
+    font-size:14px;
+    border:1px dashed var(--border);
+    border-radius:8px;
+  }
+  .empty b{color:var(--text);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:14px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .thumb{
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:5px;
+    background:var(--surface-2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    font-size:26px;
+    color:var(--text-muted);
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .name{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    word-break:break-all;
+    line-height:1.35;
+    min-height:32px;
+  }
+  .meta{
+    font-size:11px;
+    color:var(--text-muted);
+    display:flex;
+    justify-content:space-between;
+  }
+  .rename-row{
+    display:flex;
+    gap:6px;
+  }
+  .rename-row input{flex:1;width:0;padding:6px 8px;font-size:12px;}
+  .rename-row button{padding:6px 10px;font-size:12px;}
+  .card .edit-btn{
+    font-size:12px;
+    padding:6px 10px;
+    width:100%;
+  }
+  .status{
+    font-size:11px;
+    min-height:14px;
+  }
+  .status.ok{color:var(--ok);}
+  .status.err{color:var(--err);}
+  footer{
+    max-width:1000px;
+    margin:0 auto;
+    padding:0 32px 40px;
+    color:var(--text-muted);
+    font-size:12px;
+    line-height:1.6;
+  }
+  footer code{
+    font-family:'JetBrains Mono',monospace;
+    background:var(--surface-2);
+    padding:1px 5px;
+    border-radius:3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="tab"><span class="tab-label">Carpeta abierta</span></div>
+<header>
+  <h1>Buscador y renombrador de archivos</h1>
+  <p class="sub">Elige una carpeta de tu computadora, busca dentro de ella y renombra archivos o fotos directamente. Todo se guarda en el mismo lugar donde estaba el archivo — nada se sube a ningún servidor.</p>
+</header>
+
+<div class="controls">
+  <button class="primary" id="pickBtn">Elegir carpeta…</button>
+  <input type="text" id="search" placeholder="Buscar por nombre…" disabled>
+  <label class="toggle"><input type="checkbox" id="subfolders" disabled> Incluir subcarpetas</label>
+</div>
+<div class="path" id="pathLine" style="display:none;">Carpeta: <b id="pathName"></b> · <span id="countLine"></span></div>
+
+<main>
+  <div class="empty" id="emptyState">
+    Todavía no hay ninguna carpeta abierta.<br>
+    Pulsa <b>Elegir carpeta…</b> y concede permiso de lectura y escritura.<br><br>
+    <span style="font-size:12px;">Funciona en Chrome o Edge de escritorio.</span>
+  </div>
+  <div class="grid" id="grid" style="display:none;"></div>
+</main>
+
+<footer>
+  Esta herramienta usa la <code>File System Access API</code> del navegador. Solo funciona en Chrome, Edge u otros navegadores basados en Chromium, en computadora de escritorio, y servida por HTTPS (como GitHub Pages) o abierta como archivo local.
+</footer>
+
+<script>
+let rootHandle = null;
+let allFiles = []; // {name, handle, parentHandle, relPath, size, lastModified, isImage}
+
+const pickBtn = document.getElementById('pickBtn');
+const searchInput = document.getElementById('search');
+const subfoldersCheck = document.getElementById('subfolders');
+const grid = document.getElementById('grid');
+const emptyState = document.getElementById('emptyState');
+const pathLine = document.getElementById('pathLine');
+const pathName = document.getElementById('pathName');
+const countLine = document.getElementById('countLine');
+
+const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','svg','avif'];
+
+function extOf(name){
+  const i = name.lastIndexOf('.');
+  return i === -1 ? '' : name.slice(i+1).toLowerCase();
+}
+
+pickBtn.addEventListener('click', async () => {
+  try {
+    rootHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (e) {
+    return; // user cancelled
+  }
+  pathName.textContent = rootHandle.name;
+  pathLine.style.display = 'block';
+  searchInput.disabled = false;
+  subfoldersCheck.disabled = false;
+  await scanAndRender();
+});
+
+searchInput.addEventListener('input', renderGrid);
+subfoldersCheck.addEventListener('change', scanAndRender);
+
+async function walk(dirHandle, relPath, recursive){
+  const results = [];
+  for await (const [name, handle] of dirHandle.values()){
+    if (handle.kind === 'file'){
+      const file = await handle.getFile();
+      results.push({
+        name,
+        handle,
+        parentHandle: dirHandle,
+        relPath: relPath ? relPath + '/' + name : name,
+        size: file.size,
+        lastModified: file.lastModified,
+        isImage: IMAGE_EXT.includes(extOf(name))
+      });
+    } else if (handle.kind === 'directory' && recursive){
+      const sub = await walk(handle, relPath ? relPath + '/' + name : name, recursive);
+      results.push(...sub);
+    }
+  }
+  return results;
+}
+
+async function scanAndRender(){
+  if (!rootHandle) return;
+  emptyState.textContent = 'Cargando archivos…';
+  emptyState.style.display = 'block';
+  grid.style.display = 'none';
+  allFiles = await walk(rootHandle, '', subfoldersCheck.checked);
+  renderGrid();
+}
+
+function formatSize(bytes){
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+function renderGrid(){
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = q ? allFiles.filter(f => f.name.toLowerCase().includes(q)) : allFiles;
+
+  countLine.textContent = filtered.length + ' archivo(s)' + (q ? ' encontrados' : '');
+
+  if (filtered.length === 0){
+    emptyState.textContent = allFiles.length === 0
+      ? 'Esta carpeta no tiene archivos.'
+      : 'Ningún archivo coincide con tu búsqueda.';
+    emptyState.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+
+  filtered.forEach((f, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    if (f.isImage){
+      const img = document.createElement('img');
+      f.handle.getFile().then(file => { img.src = URL.createObjectURL(file); });
+      thumb.appendChild(img);
+    } else {
+      thumb.textContent = '📄';
+    }
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = f.relPath;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<span>${formatSize(f.size)}</span><span>${extOf(f.name) || '—'}</span>`;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.textContent = 'Renombrar';
+
+    const status = document.createElement('div');
+    status.className = 'status';
+
+    editBtn.addEventListener('click', () => {
+      card.replaceChild(buildRenameRow(f, card, editBtn, status), editBtn);
+    });
+
+    card.appendChild(thumb);
+    card.appendChild(name);
+    card.appendChild(meta);
+    card.appendChild(editBtn);
+    card.appendChild(status);
+    grid.appendChild(card);
+  });
+}
+
+function buildRenameRow(f, card, editBtn, status){
+  const row = document.createElement('div');
+  row.className = 'rename-row';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = f.name;
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Guardar';
+  saveBtn.className = 'primary';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancelar';
+
+  cancelBtn.addEventListener('click', () => {
+    row.replaceWith(editBtn);
+  });
+
+  const doSave = async () => {
+    const newName = input.value.trim();
+    if (!newName || newName === f.name){
+      row.replaceWith(editBtn);
+      return;
+    }
+    if (/[\\\/:*?"<>|]/.test(newName)){
+      status.textContent = 'El nombre no puede contener \\ / : * ? " < > |';
+      status.className = 'status err';
+      return;
+    }
+    saveBtn.disabled = true;
+    status.textContent = 'Guardando…';
+    status.className = 'status';
+    try {
+      await renameFile(f, newName);
+      status.textContent = 'Renombrado ✓';
+      status.className = 'status ok';
+      setTimeout(scanAndRender, 400);
+    } catch (err) {
+      status.textContent = 'Error: ' + err.message;
+      status.className = 'status err';
+      saveBtn.disabled = false;
+    }
+  };
+
+  saveBtn.addEventListener('click', doSave);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doSave();
+    if (e.key === 'Escape') row.replaceWith(editBtn);
+  });
+
+  row.appendChild(input);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  setTimeout(() => input.focus(), 0);
+  return row;
+}
+
+async function renameFile(f, newName){
+  const dir = f.parentHandle;
+
+  // Check if a file with the new name already exists
+  let exists = false;
+  try {
+    await dir.getFileHandle(newName, { create: false });
+    exists = true;
+  } catch (e) { /* doesn't exist, good */ }
+  if (exists){
+    throw new Error('Ya existe un archivo con ese nombre en la carpeta.');
+  }
+
+  const oldFile = await f.handle.getFile();
+  const buffer = await oldFile.arrayBuffer();
+
+  const newHandle = await dir.getFileHandle(newName, { create: true });
+  const writable = await newHandle.createWritable();
+  await writable.write(buffer);
+  await writable.close();
+
+  await dir.removeEntry(f.name);
+}
+</script>
+</body>
+</html>
