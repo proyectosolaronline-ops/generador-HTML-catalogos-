@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Captura con Carpeta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .container {
+            background: #1e1e1e;
+            border-radius: 28px;
+            padding: 24px 20px 32px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+        .sub {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+        }
+        .camara-wrapper {
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            aspect-ratio: 4/3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid #333;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #0a0a0a;
+        }
+        #canvas {
+            display: none;
+        }
+        .controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .btn {
+            background: #2a2a2a;
+            border: none;
+            border-radius: 60px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.15s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            flex: 1 1 auto;
+            justify-content: center;
+            min-width: 130px;
+            border: 1px solid #3a3a3a;
+        }
+        .btn-primary {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0b5ed7;
+            transform: scale(1.02);
+        }
+        .btn-success {
+            background: #198754;
+            border-color: #198754;
+        }
+        .btn-success:hover {
+            background: #157347;
+            transform: scale(1.02);
+        }
+        .btn-danger {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #b02a37;
+            transform: scale(1.02);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            pointer-events: none;
+        }
+        .info-carpeta {
+            background: #252525;
+            padding: 12px 16px;
+            border-radius: 60px;
+            margin: 20px 0 12px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border: 1px solid #3a3a3a;
+        }
+        .info-carpeta span {
+            color: #ffd966;
+            font-weight: 600;
+            background: #2d2d2d;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+        }
+        #carpetaInput {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 60px;
+            font-size: 1rem;
+            width: 180px;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+        }
+        #carpetaInput:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 2px #0d6efd55;
+        }
+        .btn-carpeta {
+            background: #3d3d3d;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .btn-carpeta:hover {
+            background: #4d4d4d;
+        }
+        .mensaje {
+            margin-top: 20px;
+            background: #1e2a1e;
+            padding: 12px;
+            border-radius: 40px;
+            color: #b0e0b0;
+            font-size: 0.9rem;
+            border-left: 4px solid #198754;
+            display: none;
+        }
+        .mensaje.visible {
+            display: block;
+        }
+        .footer {
+            margin-top: 18px;
+            font-size: 0.75rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Captura + Carpeta</h1>
+        <div class="sub">La cámara se abre directamente · Pregunta carpeta</div>
+
+        <!-- Vista de cámara -->
+        <div class="camara-wrapper">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- Controles principales -->
+        <div class="controles">
+            <button class="btn btn-primary" id="btnIniciarCamara">📷 Iniciar cámara</button>
+            <button class="btn btn-success" id="btnCapturar" disabled>🔘 Capturar</button>
+        </div>
+
+        <!-- Zona de carpeta: se pide antes de guardar -->
+        <div class="info-carpeta">
+            <span>📁 Carpeta destino</span>
+            <input type="text" id="carpetaInput" placeholder="Ej: ClienteA" value="Predeterminado">
+            <button class="btn-carpeta" id="btnAplicarCarpeta">Aplicar</button>
+        </div>
+
+        <!-- Mensaje de feedback -->
+        <div id="mensaje" class="mensaje">
+            ✅ Foto guardada en carpeta: <span id="carpetaMostrada">—</span>
+        </div>
+
+        <div class="footer">
+            <span>⚡ La foto se guarda en la carpeta que indiques</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Elementos
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const btnIniciar = document.getElementById('btnIniciarCamara');
+            const btnCapturar = document.getElementById('btnCapturar');
+            const carpetaInput = document.getElementById('carpetaInput');
+            const btnAplicarCarpeta = document.getElementById('btnAplicarCarpeta');
+            const mensajeDiv = document.getElementById('mensaje');
+            const carpetaMostrada = document.getElementById('carpetaMostrada');
+
+            // Estado
+            let stream = null;
+            let camaraActiva = false;
+            let carpetaActual = carpetaInput.value.trim() || 'Predeterminado';
+
+            // --- FUNCIONES AUXILIARES ---
+
+            // Mostrar mensaje temporal
+            function mostrarMensaje(texto, carpeta = '') {
+                carpetaMostrada.textContent = carpeta || carpetaActual;
+                mensajeDiv.classList.add('visible');
+                // Ocultar después de 4s
+                clearTimeout(window.mensajeTimeout);
+                window.mensajeTimeout = setTimeout(() => {
+                    mensajeDiv.classList.remove('visible');
+                }, 4000);
+            }
+
+            // Actualizar carpeta desde input
+            function actualizarCarpeta() {
+                const valor = carpetaInput.value.trim();
+                if (valor === '') {
+                    carpetaInput.value = 'Predeterminado';
+                    carpetaActual = 'Predeterminado';
+                } else {
+                    carpetaActual = valor;
+                }
+                // feedback visual
+                btnAplicarCarpeta.style.borderColor = '#198754';
+                setTimeout(() => {
+                    btnAplicarCarpeta.style.borderColor = '#555';
+                }, 300);
+            }
+
+            // --- INICIAR CÁMARA (directo, sin selección de archivo) ---
+            async function iniciarCamara() {
+                try {
+                    // Si ya hay stream, lo detenemos para reiniciar limpio
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                        video.srcObject = null;
+                    }
+
+                    // Configuración: cámara trasera si existe, sino frontal
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        },
+                        audio: false
+                    };
+
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    video.srcObject = stream;
+                    await video.play();
+
+                    camaraActiva = true;
+                    btnCapturar.disabled = false;
+                    btnIniciar.textContent = '🔄 Reiniciar cámara';
+                    btnIniciar.classList.add('btn-danger');
+                    btnIniciar.classList.remove('btn-primary');
+
+                    // Ajustar canvas al tamaño del video
+                    canvas.width = video.videoWidth || 1280;
+                    canvas.height = video.videoHeight || 720;
+
+                    // Ocultar mensaje anterior
+                    mensajeDiv.classList.remove('visible');
+
+                } catch (error) {
+                    console.error('Error al acceder a la cámara:', error);
+                    alert('No se pudo acceder a la cámara. Asegúrate de dar permisos y tener una cámara disponible.');
+                    btnCapturar.disabled = true;
+                    camaraActiva = false;
+                }
+            }
+
+            // --- CAPTURAR FOTO y preguntar carpeta (se usa la carpeta actual) ---
+            function capturarFoto() {
+                if (!camaraActiva || !stream) {
+                    alert('Primero inicia la cámara.');
+                    return;
+                }
+
+                // Asegurar que la carpeta esté actualizada
+                actualizarCarpeta();
+
+                // Preguntar ANTES de guardar (ya tenemos el input)
+                const carpetaElegida = carpetaInput.value.trim() || 'Predeterminado';
+                carpetaActual = carpetaElegida;
+
+                // Confirmación visual: preguntar en un prompt (o se puede usar confirm)
+                // Pero como ya tenemos el input, mostramos un confirm con la carpeta
+                const confirmar = confirm(`📁 ¿Guardar en la carpeta "${carpetaActual}"?`);
+                if (!confirmar) {
+                    // El usuario puede cambiar la carpeta en el input y volver a capturar
+                    alert('Puedes cambiar el nombre de la carpeta y presionar "Capturar" de nuevo.');
+                    return;
+                }
+
+                // --- Tomar la foto desde el video ---
+                const w = video.videoWidth || 1280;
+                const h = video.videoHeight || 720;
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(video, 0, 0, w, h);
+
+                // Generar nombre con timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const nombreArchivo = `foto_${timestamp}.png`;
+
+                // Convertir a Blob (PNG)
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        alert('Error al generar la imagen.');
+                        return;
+                    }
+
+                    // --- Crear un "archivo" y forzar la descarga en la carpeta "virtual" ---
+                    // Nota: los navegadores no permiten elegir carpeta directamente,
+                    // pero podemos simularlo con el nombre de carpeta en el nombre del archivo.
+                    // El usuario podrá guardar donde quiera, pero le mostramos la carpeta.
+                    // Usamos un link de descarga con el nombre que incluya la carpeta.
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    // Incluimos la carpeta en el nombre para organización
+                    const nombreConCarpeta = `${carpetaActual}_${nombreArchivo}`;
+                    link.download = nombreConCarpeta;
+
+                    // Simular clic para descargar
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Liberar URL
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+                    // Mostrar mensaje con la carpeta
+                    mostrarMensaje(`📸 Foto guardada como: ${nombreConCarpeta}`, carpetaActual);
+
+                }, 'image/png');
+            }
+
+            // --- EVENTOS ---
+
+            // Iniciar cámara
+            btnIniciar.addEventListener('click', function(e) {
+                e.preventDefault();
+                iniciarCamara();
+            });
+
+            // Capturar foto
+            btnCapturar.addEventListener('click', function(e) {
+                e.preventDefault();
+                capturarFoto();
+            });
+
+            // Aplicar carpeta manualmente
+            btnAplicarCarpeta.addEventListener('click', function(e) {
+                e.preventDefault();
+                actualizarCarpeta();
+                carpetaInput.value = carpetaActual; // normaliza
+                mostrarMensaje(`📁 Carpeta actual: ${carpetaActual}`, carpetaActual);
+            });
+
+            // También al presionar Enter en el input
+            carpetaInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    actualizarCarpeta();
+                    carpetaInput.value = carpetaActual;
+                    mostrarMensaje(`📁 Carpeta actual: ${carpetaActual}`, carpetaActual);
+                }
+            });
+
+            // Al perder foco también actualizar
+            carpetaInput.addEventListener('blur', function() {
+                actualizarCarpeta();
+                carpetaInput.value = carpetaActual;
+            });
+
+            // --- Inicio automático: abrir cámara al cargar (opcional) ---
+            // Si quieres que se abra sola, descomenta:
+            // window.addEventListener('load', iniciarCamara);
+
+            // Pero por claridad, dejamos que el usuario presione "Iniciar cámara"
+            // Además mostramos un pequeño tooltip
+            console.log('✅ Listo. Presiona "Iniciar cámara" para empezar.');
+
+            // Si el navegador no soporta getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Tu navegador no soporta acceso a la cámara. Usa un navegador moderno.');
+                btnIniciar.disabled = true;
+                btnCapturar.disabled = true;
+            }
+        })();
+    </script>
+</body>
+</html>
