@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Generador de Catálogo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f0f2f5;
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            max-width: 550px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 1.4em;
+            margin-bottom: 2px;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 16px;
+        }
+
+        .seccion {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+            border: 1px solid #e9ecef;
+        }
+
+        .seccion h2 {
+            color: #333;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .campo-full {
+            grid-column: 1 / -1;
+        }
+
+        .campo label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.7em;
+            margin-bottom: 3px;
+        }
+
+        .campo label .obligatorio {
+            color: #dc3545;
+        }
+
+        .campo input,
+        .campo textarea,
+        .campo select {
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            background: white;
+            width: 100%;
+            -webkit-appearance: none;
+        }
+
+        .campo input:focus,
+        .campo textarea:focus,
+        .campo select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .campo textarea {
+            min-height: 44px;
+            resize: vertical;
+        }
+
+        .campo select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        .campo small {
+            color: #666;
+            font-size: 0.65em;
+            margin-top: 3px;
+        }
+
+        /* --- BOTÓN PARA SELECCIONAR FOTO --- */
+        .btn-foto {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            background: #f8f9ff;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            touch-action: manipulation;
+        }
+
+        .btn-foto:active {
+            transform: scale(0.97);
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-foto .icono {
+            font-size: 1.3em;
+        }
+
+        .btn-foto input[type="file"] {
+            display: none;
+        }
+
+        /* --- PREVISUALIZACIÓN --- */
+        .preview-container {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 6px 10px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            min-height: 40px;
+        }
+
+        .preview-imagen {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #ddd;
+            display: none;
+            background: #f0f0f0;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .preview-imagen.mostrar {
+            display: block;
+        }
+
+        .preview-imagen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-imagen .btn-remover {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .preview-info {
+            flex: 1;
+            min-width: 60px;
+        }
+
+        .preview-info .nombre {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.75em;
+            word-break: break-all;
+        }
+
+        .preview-info .estado {
+            color: #28a745;
+            font-size: 0.65em;
+        }
+
+        .preview-info .sin-foto {
+            color: #999;
+            font-size: 0.65em;
+        }
+
+        /* --- PRODUCTOS GENERADOS --- */
+        .producto-form {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .producto-form .titulo-producto {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .producto-form .titulo-producto .numero {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+        }
+
+        /* --- BOTONES --- */
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        /* --- CÓDIGO GENERADO --- */
+        .codigo-generado {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .codigo-generado.visible {
+            display: block;
+        }
+
+        .codigo-generado .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .codigo-generado .tabs .tab-btn {
+            padding: 6px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            font-weight: 600;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+
+        .codigo-generado .tabs .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .codigo-generado .tabs .tab-btn:active {
+            transform: scale(0.95);
+        }
+
+        .codigo-generado textarea {
+            width: 100%;
+            min-height: 280px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7em;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            resize: vertical;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .codigo-generado .botones-codigo {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .codigo-generado .botones-codigo .btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            font-size: 0.8em;
+        }
+
+        .instrucciones {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 10px;
+        }
+
+        .instrucciones h4 {
+            color: #856404;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .instrucciones ul {
+            color: #856404;
+            padding-left: 16px;
+            margin: 0;
+            font-size: 0.75em;
+        }
+
+        .instrucciones ul li {
+            margin-bottom: 2px;
+        }
+
+        .instrucciones code {
+            background: rgba(0,0,0,0.05);
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.65em;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        .contador-productos {
+            font-size: 0.75em;
+            color: #666;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .contenedor {
+                padding: 10px;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            .seccion {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            .campo input,
+            .campo textarea {
+                font-size: 0.85em;
+                padding: 10px;
+            }
+            .btn {
+                padding: 12px 14px;
+                font-size: 0.85em;
+            }
+            .codigo-generado textarea {
+                min-height: 200px;
+                font-size: 0.65em;
+            }
+            .preview-imagen {
+                width: 40px;
+                height: 40px;
+            }
+            h1 {
+                font-size: 1.2em;
+            }
+            .btn-foto {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+            .codigo-generado .tabs .tab-btn {
+                font-size: 0.65em;
+                padding: 4px 10px;
+            }
+            .producto-form {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor">
+
+        <h1>📦 Generador de Catálogo</h1>
+        <p class="subtitulo">Completa los datos y genera HTML + Sitemap + Robots.txt</p>
+
+        <!-- ========================================== -->
+        <!-- DATOS DEL NEGOCIO                          -->
+        <!-- ========================================== -->
+        <div class="seccion">
+            <h2>📋 Paso 1: Datos del Negocio</h2>
+            <div class="grid-2">
+                <div class="campo campo-full">
+                    <label>Usuario GitHub <span class="obligatorio">*</span></label>
+                    <input type="text" id="usuarioGitHub" placeholder="Ej: cliente">
+                    <small>El usuario que creaste en GitHub</small>
+                </div>
+                <div class="campo">
+                    <label>Nombre del Negocio <span class="obligatorio">*</span></label>
+                    <input type="text" id="nombreNegocio" placeholder="Ej: superOnline">
+                </div>
+                <div class="campo">
+                    <label>Eslogan <span class="obligatorio">*</span></label>
+                    <input type="text" id="tipoNegocio" placeholder="Ej: Tecnología a tu alcance">
+                </div>
+                <div class="campo">
+                    <label>WhatsApp <span class="obligatorio">*</span></label>
+                    <input type="text" id="whatsapp" placeholder="4424003376">
+                </div>
+                <div class="campo">
+                    <label>Correo Electrónico <span class="obligatorio">*</span></label>
+                    <input type="email" id="email" placeholder="contacto@negocio.com">
+                </div>
+                <div class="campo campo-full">
+                    <label>Ubicación (Google Maps) <span class="obligatorio">*</span></label>
+                    <input type="text" id="ubicacion" placeholder="https://maps.app.goo.gl/...">
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- BANNER                                     -->
+        <!-- ========================================== -->
+        <div class="seccion">
+            <h2>🖼️ Paso 2: Banner</h2>
+            <div class="campo campo-full">
+                <label>Nombre del archivo en el HTML <span class="obligatorio">*</span></label>
+                <input type="text" id="bannerNombre" placeholder="banner.jpg" value="banner.jpg">
+                <small>Este es el nombre que aparecerá en el código HTML</small>
+            </div>
+            <div class="campo campo-full" style="margin-top:6px;">
+                <label>Seleccionar foto de la galería <span class="obligatorio">*</span></label>
+                <label class="btn-foto">
+                    <span class="icono">🖼️</span>
+                    Buscar Foto
+                    <input type="file" id="bannerFile" accept="image/*">
+                </label>
+                <div class="preview-container">
+                    <div class="preview-imagen" id="previewBanner">
+                        <img id="previewBannerImg" src="">
+                        <button class="btn-remover" onclick="removerImagen('banner')">✕</button>
+                    </div>
+                    <div class="preview-info">
+                        <div class="nombre" id="nombreBanner">📷 Sin foto</div>
+                        <div class="sin-foto" id="estadoBanner">Selecciona una foto de tu galería</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CANTIDAD DE PRODUCTOS                      -->
+        <!-- ========================================== -->
+        <div class="seccion">
+            <h2>📦 Paso 3: Cantidad de Productos</h2>
+            <div class="campo campo-full">
+                <label>¿Cuántos productos deseas agregar? <span class="obligatorio">*</span></label>
+                <select id="cantidadProductos" onchange="generarFormularios()">
+                    <option value="1">1 producto</option>
+                    <option value="6">6 productos</option>
+                    <option value="12" selected>12 productos</option>
+                    <option value="24">24 productos</option>
+                    <option value="33">33 productos</option>
+                    <option value="50">50 productos</option>
+                </select>
+                <small>Selecciona la cantidad o escribe un número del 1 al 50</small>
+            </div>
+            <div class="campo campo-full" style="margin-top:6px;">
+                <label>O escribe un número personalizado:</label>
+                <input type="number" id="cantidadPersonalizada" min="1" max="50" placeholder="Ej: 15" onchange="actualizarCantidad()">
+                <small>Escribe un número del 1 al 50</small>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PRODUCTOS - GENERADOS DINÁMICAMENTE        -->
+        <!-- ========================================== -->
+        <div class="seccion" id="seccionProductos">
+            <h2>📦 Paso 4: Productos</h2>
+            <div id="productosContainer"></div>
+            <div class="contador-productos" id="contadorProductos">0 productos</div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- GENERAR HTML + SITEMAP + ROBOTS           -->
+        <!-- ========================================== -->
+        <div class="seccion">
+            <h2>⚡ Paso 5: Generar Archivos</h2>
+            <button class="btn btn-success" onclick="generarArchivos()" style="padding:14px;font-size:0.95em;">
+                🚀 Generar HTML + Sitemap + Robots
+            </button>
+
+            <div class="codigo-generado" id="codigoGenerado">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="cambiarTab('html')">📄 index.html</button>
+                    <button class="tab-btn" onclick="cambiarTab('sitemap')">🗺️ sitemap.xml</button>
+                    <button class="tab-btn" onclick="cambiarTab('robots')">🤖 robots.txt</button>
+                </div>
+                <textarea id="codigoHTML" readonly></textarea>
+                <div class="botones-codigo">
+                    <button class="btn btn-primary" onclick="copiarCodigo()">📋 Copiar</button>
+                    <button class="btn btn-success" onclick="descargarHTML()">💾 Descargar HTML</button>
+                    <button class="btn btn-outline" onclick="descargarSitemap()">🗺️ Descargar Sitemap</button>
+                    <button class="btn btn-outline" onclick="descargarRobots()">🤖 Descargar Robots</button>
+                </div>
+
+                <div class="instrucciones">
+                    <h4>📋 Instrucciones para entregar al cliente:</h4>
+                    <ul>
+                        <li><strong>1.</strong> Copia el código HTML de arriba y pégalo en <code>index.html</code></li>
+                        <li><strong>2.</strong> Descarga el <code>sitemap.xml</code> y súbelo a la raíz del repositorio</li>
+                        <li><strong>3.</strong> Descarga el <code>robots.txt</code> y súbelo a la raíz del repositorio</li>
+                        <li><strong>4.</strong> Crea la carpeta <code>imagenes/</code> y guarda las imágenes con los nombres que escribiste</li>
+                        <li><strong>5.</strong> Sube todo a GitHub y publica</li>
+                        <li><strong>6.</strong> Google indexará automáticamente tu catálogo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">Generador de Catálogo v2.0</div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // VARIABLES GLOBALES
+        // ==========================================
+        let productosData = [];
+        let archivosGenerados = {
+            html: '',
+            sitemap: '',
+            robots: ''
+        };
+        let tabActual = 'html';
+
+        // ==========================================
+        // GENERAR FORMULARIOS DE PRODUCTOS
+        // ==========================================
+        function generarFormularios() {
+            const cantidad = parseInt(document.getElementById('cantidadProductos').value);
+            const container = document.getElementById('productosContainer');
+            const contador = document.getElementById('contadorProductos');
+
+            let html = '';
+            for (let i = 1; i <= cantidad; i++) {
+                html += `
+                    <div class="producto-form" id="producto-${i}">
+                        <div class="titulo-producto">
+                            <span class="numero">${i}</span>
+                            Producto #${i}
+                        </div>
+                        <div class="grid-2">
+                            <div class="campo campo-full">
+                                <label>Nombre del Producto <span class="obligatorio">*</span></label>
+                                <input type="text" id="prodNombre_${i}" placeholder="Ej: Auriculares">
+                            </div>
+                            <div class="campo">
+                                <label>Precio <span class="obligatorio">*</span></label>
+                                <input type="text" id="prodPrecio_${i}" placeholder="$89.99">
+                            </div>
+                            <div class="campo">
+                                <label>Tipo <span class="obligatorio">*</span></label>
+                                <input type="text" id="prodTipo_${i}" placeholder="Electrónica">
+                            </div>
+                            <div class="campo campo-full">
+                                <label>Descripción <span class="obligatorio">*</span></label>
+                                <textarea id="prodDescripcion_${i}" placeholder="Descripción detallada..." rows="2"></textarea>
+                            </div>
+                            <div class="campo campo-full">
+                                <label>Nombre del archivo en el HTML <span class="obligatorio">*</span></label>
+                                <input type="text" id="prodImagenNombre_${i}" placeholder="producto${i}.jpg" value="producto${i}.jpg">
+                                <small>Este es el nombre que aparecerá en el código HTML</small>
+                            </div>
+                            <div class="campo campo-full">
+                                <label>Seleccionar foto de la galería <span class="obligatorio">*</span></label>
+                                <label class="btn-foto">
+                                    <span class="icono">🖼️</span>
+                                    Buscar Foto
+                                    <input type="file" id="prodFile_${i}" accept="image/*">
+                                </label>
+                                <div class="preview-container">
+                                    <div class="preview-imagen" id="previewProducto_${i}">
+                                        <img id="previewProductoImg_${i}" src="">
+                                        <button class="btn-remover" onclick="removerImagenProducto(${i})">✕</button>
+                                    </div>
+                                    <div class="preview-info">
+                                        <div class="nombre" id="nombreProducto_${i}">📷 Sin foto</div>
+                                        <div class="sin-foto" id="estadoProducto_${i}">Selecciona una foto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            contador.textContent = `${cantidad} productos`;
+
+            // Asignar eventos a los inputs de archivo
+            for (let i = 1; i <= cantidad; i++) {
+                const input = document.getElementById(`prodFile_${i}`);
+                if (input) {
+                    input.addEventListener('change', function(e) {
+                        procesarImagenProducto(e, i);
+                    });
+                }
+            }
+        }
+
+        // ==========================================
+        // PROCESAR IMAGEN DE PRODUCTO
+        // ==========================================
+        function procesarImagenProducto(e, index) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(`previewProductoImg_${index}`).src = e.target.result;
+                    document.getElementById(`previewProducto_${index}`).classList.add('mostrar');
+                    document.getElementById(`nombreProducto_${index}`).textContent = '📷 ' + file.name;
+                    document.getElementById(`estadoProducto_${index}`).textContent = '✅ Foto seleccionada';
+                    document.getElementById(`estadoProducto_${index}`).className = 'estado';
+                    // NO auto-completamos el nombre, el usuario escribe el que quiere
+                };
+                reader.readAsDataURL(file);
+            }
+            this.value = '';
+        }
+
+        // ==========================================
+        // REMOVER IMAGEN DE PRODUCTO
+        // ==========================================
+        function removerImagenProducto(index) {
+            document.getElementById(`previewProducto_${index}`).classList.remove('mostrar');
+            document.getElementById(`nombreProducto_${index}`).textContent = '📷 Sin foto';
+            document.getElementById(`estadoProducto_${index}`).textContent = 'Selecciona una foto';
+            document.getElementById(`estadoProducto_${index}`).className = 'sin-foto';
+            document.getElementById(`prodFile_${index}`).value = '';
+        }
+
+        // ==========================================
+        // ACTUALIZAR CANTIDAD PERSONALIZADA
+        // ==========================================
+        function actualizarCantidad() {
+            const valor = parseInt(document.getElementById('cantidadPersonalizada').value);
+            if (valor >= 1 && valor <= 50) {
+                document.getElementById('cantidadProductos').value = valor;
+                generarFormularios();
+            } else if (valor > 50) {
+                alert('⚠️ El máximo de productos es 50');
+                document.getElementById('cantidadPersonalizada').value = '';
+            }
+        }
+
+        // ==========================================
+        // PROCESAR IMAGEN - BANNER
+        // ==========================================
+        document.getElementById('bannerFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewBannerImg').src = e.target.result;
+                    document.getElementById('previewBanner').classList.add('mostrar');
+                    document.getElementById('nombreBanner').textContent = '📷 ' + file.name;
+                    document.getElementById('estadoBanner').textContent = '✅ Foto seleccionada - Usa el nombre que quieras arriba';
+                    document.getElementById('estadoBanner').className = 'estado';
+                };
+                reader.readAsDataURL(file);
+            }
+            this.value = '';
+        });
+
+        // ==========================================
+        // REMOVER IMAGEN - BANNER
+        // ==========================================
+        function removerImagen(tipo) {
+            if (tipo === 'banner') {
+                document.getElementById('previewBanner').classList.remove('mostrar');
+                document.getElementById('nombreBanner').textContent = '📷 Sin foto';
+                document.getElementById('estadoBanner').textContent = 'Selecciona una foto de tu galería';
+                document.getElementById('estadoBanner').className = 'sin-foto';
+                document.getElementById('bannerFile').value = '';
+            }
+        }
+
+        // ==========================================
+        // RECOLECTAR DATOS DE PRODUCTOS
+        // ==========================================
+        function recolectarProductos() {
+            const cantidad = parseInt(document.getElementById('cantidadProductos').value);
+            const productos = [];
+
+            for (let i = 1; i <= cantidad; i++) {
+                const nombre = document.getElementById(`prodNombre_${i}`)?.value.trim() || '';
+                const precio = document.getElementById(`prodPrecio_${i}`)?.value.trim() || '';
+                const tipo = document.getElementById(`prodTipo_${i}`)?.value.trim() || '';
+                const descripcion = document.getElementById(`prodDescripcion_${i}`)?.value.trim() || '';
+                const imagenNombre = document.getElementById(`prodImagenNombre_${i}`)?.value.trim() || '';
+
+                // Verificar si hay foto seleccionada
+                const preview = document.getElementById(`previewProducto_${i}`);
+                const tieneFoto = preview ? preview.classList.contains('mostrar') : false;
+
+                if (nombre && precio && tipo && descripcion && imagenNombre && tieneFoto) {
+                    productos.push({
+                        id: i,
+                        nombre: nombre,
+                        precio: precio,
+                        tipo: tipo,
+                        descripcion: descripcion,
+                        imagen: imagenNombre
+                    });
+                }
+            }
+
+            return productos;
+        }
+
+        // ==========================================
+        // CAMBIAR TAB
+        // ==========================================
+        function cambiarTab(tab) {
+            tabActual = tab;
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            const textarea = document.getElementById('codigoHTML');
+
+            if (tab === 'html') {
+                buttons[0].classList.add('active');
+                textarea.value = archivosGenerados.html;
+            } else if (tab === 'sitemap') {
+                buttons[1].classList.add('active');
+                textarea.value = archivosGenerados.sitemap;
+            } else if (tab === 'robots') {
+                buttons[2].classList.add('active');
+                textarea.value = archivosGenerados.robots;
+            }
+        }
+
+        // ==========================================
+        // GENERAR ARCHIVOS
+        // ==========================================
+        function generarArchivos() {
+            // Validar datos del negocio
+            const usuarioGitHub = document.getElementById('usuarioGitHub').value.trim();
+            const nombreNegocio = document.getElementById('nombreNegocio').value.trim();
+            const tipoNegocio = document.getElementById('tipoNegocio').value.trim();
+            const whatsapp = document.getElementById('whatsapp').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const ubicacion = document.getElementById('ubicacion').value.trim();
+            const bannerNombre = document.getElementById('bannerNombre').value.trim();
+
+            if (!usuarioGitHub) { alert('⚠️ Ingresa el usuario GitHub'); return; }
+            if (!nombreNegocio) { alert('⚠️ Ingresa el nombre del negocio'); return; }
+            if (!tipoNegocio) { alert('⚠️ Ingresa el eslogan'); return; }
+            if (!whatsapp) { alert('⚠️ Ingresa el WhatsApp'); return; }
+            if (!email) { alert('⚠️ Ingresa el correo'); return; }
+            if (!ubicacion) { alert('⚠️ Ingresa la ubicación'); return; }
+            if (!bannerNombre) { alert('⚠️ Escribe el nombre del archivo del banner'); return; }
+
+            // Validar banner
+            const previewBanner = document.getElementById('previewBanner');
+            if (!previewBanner.classList.contains('mostrar')) {
+                alert('⚠️ Selecciona una foto para el banner');
+                return;
+            }
+
+            // Recolectar productos
+            const productos = recolectarProductos();
+            if (productos.length === 0) {
+                alert('⚠️ Completa al menos un producto con todos los datos y su foto');
+                return;
+            }
+
+            const urlBase = `https://${usuarioGitHub}.github.io`;
+            const fecha = new Date().toISOString().split('T')[0];
+
+            // Generar HTML
+            const html = generarHTMLCompleto({
+                usuarioGitHub,
+                nombreNegocio,
+                tipoNegocio,
+                whatsapp,
+                email,
+                ubicacion,
+                bannerNombre,
+                productos,
+                urlBase
+            });
+
+            // Generar Sitemap
+            const sitemap = generarSitemap(urlBase, productos, fecha);
+
+            // Generar Robots.txt
+            const robots = generarRobots(urlBase);
+
+            // Guardar archivos
+            archivosGenerados.html = html;
+            archivosGenerados.sitemap = sitemap;
+            archivosGenerados.robots = robots;
+
+            // Mostrar en el tab actual
+            document.getElementById('codigoHTML').value = html;
+            document.getElementById('codigoGenerado').classList.add('visible');
+            cambiarTab('html');
+
+            document.getElementById('codigoGenerado').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // GENERAR SITEMAP.XML
+        // ==========================================
+        function generarSitemap(urlBase, productos, fecha) {
+            let urls = `
+        <url>
+            <loc>${urlBase}/</loc>
+            <lastmod>${fecha}</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>1.0</priority>
+        </url>`;
+
+            productos.forEach(p => {
+                urls += `
+        <url>
+            <loc>${urlBase}/#producto-${p.id}</loc>
+            <lastmod>${fecha}</lastmod>
+            <changefreq>monthly</changefreq>
+            <priority>0.8</priority>
+        </url>`;
+            });
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            ${urls}
+        </urlset>`;
+        }
+
+        // ==========================================
+        // GENERAR ROBOTS.TXT
+        // ==========================================
+        function generarRobots(urlBase) {
+            return `# robots.txt para ${urlBase}
+        User-agent: *
+        Allow: /
+        
+        # Sitemap
+        Sitemap: ${urlBase}/sitemap.xml
+        
+        # Reglas para Google
+        User-agent: Googlebot
+        Allow: /
+        
+        # Reglas para Bing
+        User-agent: bingbot
+        Allow: /`;
+        }
+
+        // ==========================================
+        // GENERAR HTML COMPLETO
+        // ==========================================
+        function generarHTMLCompleto(data) {
+            const productosJS = data.productos.map(p => `
+                {
+                    id: ${p.id},
+                    nombre: "${p.nombre}",
+                    referencia: "REF-${String(p.id).padStart(3, '0')}",
+                    descripcion: "${p.descripcion}",
+                    precio: "${p.precio}",
+                    tipo: "${p.tipo}",
+                    imagen: "imagenes/${p.imagen}"
+                }
+            `).join(',');
+
+            const fecha = new Date().getFullYear();
+
+            return `<!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+            <title>${data.nombreNegocio} - Catálogo</title>
+            
+            <meta name="description" content="Catálogo de ${data.nombreNegocio}. ${data.tipoNegocio}.">
+            <meta name="keywords" content="catálogo, productos, ${data.tipoNegocio.toLowerCase()}, ${data.nombreNegocio.toLowerCase()}">
+            <meta name="robots" content="index, follow">
+            <meta name="author" content="${data.nombreNegocio}">
+            
+            <meta property="og:type" content="website">
+            <meta property="og:title" content="${data.nombreNegocio} - Catálogo">
+            <meta property="og:description" content="Catálogo de ${data.nombreNegocio}. ${data.tipoNegocio}.">
+            <meta property="og:image" content="${data.urlBase}/imagenes/${data.bannerNombre}">
+            <meta property="og:site_name" content="${data.nombreNegocio}">
+            
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="${data.nombreNegocio} - Catálogo">
+            <meta name="twitter:description" content="Catálogo de ${data.nombreNegocio}. ${data.tipoNegocio}.">
+            <meta name="twitter:image" content="${data.urlBase}/imagenes/${data.bannerNombre}">
+            
+            <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "${data.nombreNegocio}",
+                "url": "${data.urlBase}",
+                "description": "Catálogo de ${data.nombreNegocio}. ${data.tipoNegocio}."
+            }
+            <\/script>
+
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
+                
+                .pantalla-bloqueo { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; }
+                .pantalla-bloqueo.activo { display: flex; }
+                .pantalla-bloqueo .icono-bloqueo { font-size: 4em; margin-bottom: 15px; animation: pulse 2s infinite; }
+                @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+                .pantalla-bloqueo h2 { color: white; font-size: 1.5em; margin-bottom: 10px; }
+                .pantalla-bloqueo p { color: #ccc; font-size: 0.95em; margin-bottom: 20px; max-width: 350px; }
+                .pantalla-bloqueo .btn-contacto-bloqueo { display: inline-flex; align-items: center; gap: 8px; background: #25D366; color: white; text-decoration: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 1em; }
+                
+                .banner-negocio { position: relative; width: 100%; height: 120px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; text-align: center; }
+                .banner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); }
+                .banner-contenido { position: relative; z-index: 2; color: white; padding: 12px 16px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                .banner-contenido h1 { font-size: 1.4em; margin-bottom: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+                .banner-contenido .banner-descripcion { font-size: 0.8em; opacity: 0.95; }
+                
+                .header-catalogo { text-align: center; padding: 15px 15px 5px; color: #333; }
+                .header-catalogo h2 { font-size: 1.2em; margin-bottom: 2px; }
+                .header-catalogo p { color: #666; font-size: 0.8em; }
+                
+                .galeria { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1200px; margin: 0 auto; padding: 12px 15px; }
+                .producto-item { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; transition: transform 0.2s ease; position: relative; }
+                .producto-item:active { transform: scale(0.97); }
+                .producto-item .producto-imagen-galeria { width: 100%; height: 130px; background: #f0f0f0; overflow: hidden; }
+                .producto-item .producto-imagen-galeria img { width: 100%; height: 100%; object-fit: cover; }
+                .producto-item .producto-nombre-galeria { padding: 8px 10px; text-align: center; font-weight: 600; color: #333; font-size: 0.8em; background: white; border-top: 1px solid #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .producto-item .producto-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; color: white; font-size: 1.2em; }
+                .producto-item:active .producto-overlay { opacity: 0.5; }
+                
+                .modal-producto { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); animation: fadeIn 0.3s ease; overflow-y: auto; padding: 10px; }
+                .modal-producto.activo { display: flex; align-items: center; justify-content: center; }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                .modal-producto-content { background: white; border-radius: 16px; max-width: 500px; width: 100%; max-height: 95vh; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; }
+                @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                .modal-producto-content .modal-imagen { width: 100%; height: 250px; background: #f0f0f0; overflow: hidden; border-radius: 16px 16px 0 0; }
+                .modal-producto-content .modal-imagen img { width: 100%; height: 100%; object-fit: cover; }
+                .modal-producto-content .modal-detalles { padding: 16px 18px; }
+                .modal-producto-content .modal-detalles h2 { font-size: 1.3em; color: #333; margin-bottom: 4px; }
+                .modal-producto-content .modal-detalles .modal-referencia { color: #999; font-size: 0.75em; margin-bottom: 6px; }
+                .modal-producto-content .modal-detalles .modal-descripcion { color: #666; line-height: 1.5; margin-bottom: 10px; font-size: 0.85em; }
+                .modal-producto-content .modal-detalles .modal-precio { font-size: 1.5em; font-weight: bold; color: #764ba2; margin-bottom: 4px; }
+                .modal-producto-content .modal-detalles .modal-tipo { display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7em; margin-bottom: 12px; }
+                .modal-producto-content .modal-detalles .modal-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+                .modal-producto-content .modal-detalles .btn-solicitar-modal { flex: 1; padding: 12px 16px; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white; border: none; border-radius: 10px; font-size: 0.85em; font-weight: bold; cursor: pointer; min-width: 120px; }
+                .modal-producto-content .modal-detalles .btn-regresar { padding: 12px 16px; background: #e0e0e0; color: #333; border: none; border-radius: 10px; font-size: 0.85em; font-weight: bold; cursor: pointer; min-width: 100px; }
+                .modal-producto-content .btn-cerrar-modal { position: absolute; top: 10px; right: 14px; background: rgba(0,0,0,0.6); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
+                
+                .modal-contacto { display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: fadeIn 0.3s ease; overflow-y: auto; padding: 10px; }
+                .modal-contacto.activo { display: flex; align-items: center; justify-content: center; }
+                .modal-contacto-content { background: white; border-radius: 16px; max-width: 400px; width: 100%; padding: 20px; position: relative; animation: slideUp 0.3s ease; }
+                .modal-contacto-content h2 { margin-bottom: 12px; color: #333; font-size: 1.1em; }
+                .modal-contacto-content #productoSeleccionado { background: #f5f5f5; padding: 12px; border-radius: 10px; margin-bottom: 16px; font-size: 0.85em; color: #333; }
+                .modal-contacto-content .contacto-opciones { display: flex; flex-direction: column; gap: 10px; }
+                .modal-contacto-content .btn-whatsapp, .modal-contacto-content .btn-email { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; text-decoration: none; border-radius: 10px; font-size: 0.9em; font-weight: bold; border: none; cursor: pointer; }
+                .modal-contacto-content .btn-whatsapp { background: #25D366; color: white; }
+                .modal-contacto-content .btn-email { background: #667eea; color: white; }
+                .modal-contacto-content .btn-cerrar-contacto { position: absolute; right: 12px; top: 8px; font-size: 22px; cursor: pointer; color: #999; background: none; border: none; padding: 5px; }
+                
+                .seccion-ubicacion { max-width: 1200px; margin: 16px auto; padding: 0 15px 20px; }
+                .seccion-ubicacion .ubicacion-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; padding: 18px; }
+                .seccion-ubicacion .ubicacion-container h3 { color: #333; font-size: 1.1em; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+                .seccion-ubicacion .ubicacion-container p { color: #666; font-size: 0.8em; margin-bottom: 12px; text-align: center; }
+                .seccion-ubicacion .ubicacion-container .btn-mapa { display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; text-decoration: none; padding: 10px 24px; border-radius: 30px; font-weight: bold; font-size: 0.85em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+                .seccion-ubicacion .ubicacion-container .btn-mapa:active { transform: scale(0.95); }
+                .seccion-ubicacion .ubicacion-container .mapa-visual { width: 100%; max-width: 600px; height: 150px; background: #e8ecf1; border-radius: 10px; margin-top: 12px; overflow: hidden; }
+                .seccion-ubicacion .ubicacion-container .mapa-visual iframe { width: 100%; height: 100%; border: none; }
+                
+                .btn-compartir-flotante { position: fixed; bottom: 20px; right: 20px; z-index: 500; background: #667eea; color: white; border: none; padding: 12px 18px; border-radius: 50px; font-size: 0.85em; font-weight: bold; cursor: pointer; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4); display: flex; align-items: center; gap: 6px; }
+                .btn-compartir-flotante:active { transform: scale(0.95); }
+                
+                .modal-compartir { display: none; position: fixed; z-index: 1200; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); animation: fadeIn 0.3s ease; overflow-y: auto; padding: 10px; }
+                .modal-compartir.activo { display: flex; align-items: center; justify-content: center; }
+                .compartir-content { background: white; border-radius: 16px; padding: 20px; width: 92%; max-width: 380px; position: relative; animation: slideUp 0.3s ease; }
+                .compartir-content .close { position: absolute; right: 12px; top: 8px; font-size: 22px; cursor: pointer; color: #999; background: none; border: none; padding: 5px; }
+                .compartir-content h2 { margin-bottom: 10px; color: #333; font-size: 1.1em; padding-right: 25px; }
+                .qr-container { text-align: center; margin: 12px 0; }
+                .qr-container #qrCode { display: inline-block; }
+                .qr-label { margin-top: 6px; color: #666; font-size: 0.75em; }
+                .compartir-botones { display: flex; flex-direction: column; gap: 10px; }
+                .btn-compartir-whatsapp, .btn-copiar-enlace { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; text-align: center; border-radius: 10px; font-size: 0.85em; font-weight: bold; border: none; cursor: pointer; }
+                .btn-compartir-whatsapp { background: #25D366; color: white; }
+                .btn-copiar-enlace { background: #667eea; color: white; }
+                .copiado-confirmacion { display: none; color: #25D366; font-weight: bold; margin-top: 6px; font-size: 0.8em; text-align: center; }
+                
+                footer { text-align: center; color: #999; margin-top: 8px; padding: 12px; font-size: 0.7em; }
+                
+                @media (min-width: 500px) { .galeria { grid-template-columns: repeat(3, 1fr); gap: 12px; } .producto-item .producto-imagen-galeria { height: 150px; } }
+                @media (min-width: 768px) { .galeria { grid-template-columns: repeat(4, 1fr); gap: 16px; } .producto-item .producto-imagen-galeria { height: 180px; } .modal-producto-content .modal-imagen { height: 350px; } .banner-contenido h1 { font-size: 2em; } .seccion-ubicacion .ubicacion-container .mapa-visual { height: 200px; } }
+                @media (min-width: 1024px) { .galeria { grid-template-columns: repeat(5, 1fr); gap: 18px; } }
+            </style>
+        </head>
+        <body>
+        
+            <div id="pantallaBloqueo" class="pantalla-bloqueo">
+                <div class="icono-bloqueo">🔒</div>
+                <h2>Catálogo No Autorizado</h2>
+                <p>Este catálogo solo funciona en el dominio autorizado.</p>
+                <a id="btnContactoBloqueo" class="btn-contacto-bloqueo" href="https://wa.me/${data.whatsapp}?text=Hola,%20necesito%20activar%20mi%20catálogo" target="_blank">💬 Contactar</a>
+            </div>
+        
+            <div class="banner-negocio" id="bannerNegocio" style="background-image: url('imagenes/${data.bannerNombre}');">
+                <div class="banner-overlay"></div>
+                <div class="banner-contenido">
+                    <h1 id="bannerNombre">${data.nombreNegocio}</h1>
+                    <p class="banner-descripcion" id="bannerTipo">${data.tipoNegocio}</p>
+                </div>
+            </div>
+        
+            <div class="header-catalogo">
+                <h2>🌟 Nuestro Catálogo</h2>
+                <p id="contadorProductos">${data.productos.length} Productos</p>
+            </div>
+        
+            <main class="galeria" id="galeria"></main>
+        
+            <section class="seccion-ubicacion">
+                <div class="ubicacion-container">
+                    <h3>📍 Nuestra Ubicación</h3>
+                    <p>Encuéntranos fácilmente con Google Maps</p>
+                    <a href="${data.ubicacion}" class="btn-mapa" target="_blank">🗺️ Ver en Google Maps</a>
+                    <div class="mapa-visual">
+                        <iframe src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(data.nombreNegocio)}" loading="lazy" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </section>
+        
+            <footer>
+                <p>© ${fecha} ${data.nombreNegocio} | Todos los derechos reservados</p>
+            </footer>
+        
+            <button class="btn-compartir-flotante" onclick="abrirModalCompartir()">📱 Compartir</button>
+        
+            <div id="modalProducto" class="modal-producto">
+                <div class="modal-producto-content">
+                    <button class="btn-cerrar-modal" onclick="cerrarModalProducto()">✕</button>
+                    <div class="modal-imagen"><img id="modalImagen" src="" alt=""></div>
+                    <div class="modal-detalles">
+                        <h2 id="modalNombre"></h2>
+                        <p class="modal-referencia" id="modalReferencia"></p>
+                        <p class="modal-descripcion" id="modalDescripcion"></p>
+                        <p class="modal-precio" id="modalPrecio"></p>
+                        <span class="modal-tipo" id="modalTipo"></span>
+                        <div class="modal-botones">
+                            <button class="btn-solicitar-modal" onclick="abrirModalContacto()">📱 Solicitar</button>
+                            <button class="btn-regresar" onclick="cerrarModalProducto()">← Regresar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <div id="modalContacto" class="modal-contacto">
+                <div class="modal-contacto-content">
+                    <button class="btn-cerrar-contacto" onclick="cerrarModalContacto()">&times;</button>
+                    <h2>📱 Solicitar Información</h2>
+                    <p id="productoSeleccionado"></p>
+                    <div class="contacto-opciones">
+                        <a id="whatsappLink" class="btn-whatsapp" target="_blank">💬 WhatsApp</a>
+                        <a id="emailLink" class="btn-email">📧 Correo</a>
+                    </div>
+                </div>
+            </div>
+        
+            <div id="modalCompartir" class="modal-compartir">
+                <div class="compartir-content">
+                    <button class="close" onclick="cerrarModalCompartir()">&times;</button>
+                    <h2>📱 Compartir Catálogo</h2>
+                    <p style="color:#666;font-size:0.8em;">Escanea el QR o comparte el enlace</p>
+                    <div class="qr-container"><div id="qrCode"></div><p class="qr-label">📸 Escanea para ver</p></div>
+                    <div class="compartir-botones">
+                        <button class="btn-compartir-whatsapp" onclick="compartirPorWhatsApp()">💬 WhatsApp</button>
+                        <button class="btn-copiar-enlace" onclick="copiarEnlace()">🔗 Copiar</button>
+                        <p id="copiadoConfirmacion" class="copiado-confirmacion">✅ ¡Enlace copiado!</p>
+                    </div>
+                </div>
+            </div>
+        
+            <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+        
+            <script>
+                const CONFIG = {
+                    negocio: {
+                        nombre: "${data.nombreNegocio}",
+                        tipo: "${data.tipoNegocio}"
+                    },
+                    ubicacion: "${data.ubicacion}",
+                    whatsapp: "${data.whatsapp}",
+                    email: "${data.email}",
+                    dominioPermitido: "${data.usuarioGitHub}.github.io",
+                    whatsappAdministrador: "${data.whatsapp}"
+                };
+        
+                const productos = [${productosJS}];
+        
+                // ==========================================
+                // VERIFICADOR DE DOMINIO
+                // ==========================================
+                (function() {
+                    const dominioActual = window.location.hostname;
+                    const dominioPermitido = CONFIG.dominioPermitido;
+                    if (dominioActual === '' || dominioActual === 'localhost' || dominioActual === '127.0.0.1') return;
+                    if (dominioActual !== dominioPermitido) {
+                        document.getElementById('pantallaBloqueo').classList.add('activo');
+                        document.querySelectorAll('body > *:not(#pantallaBloqueo)').forEach(el => el.style.display = 'none');
+                        throw new Error('Dominio no autorizado');
+                    }
+                })();
+        
+                document.getElementById('bannerNombre').textContent = CONFIG.negocio.nombre;
+                document.getElementById('bannerTipo').textContent = CONFIG.negocio.tipo;
+        
+                function generarGaleria() {
+                    const galeria = document.getElementById('galeria');
+                    const productosConImagen = productos.filter(p => p.imagen && p.imagen.trim() !== '');
+                    document.getElementById('contadorProductos').textContent = productosConImagen.length + ' Productos';
+                    if (productosConImagen.length === 0) {
+                        galeria.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px 15px;color:#666;"><h3>📷 No hay productos</h3></div>';
+                        return;
+                    }
+                    productosConImagen.forEach(producto => {
+                        const item = document.createElement('div');
+                        item.className = 'producto-item';
+                        item.innerHTML = \`
+                            <div class="producto-imagen-galeria"><img src="\${producto.imagen}" alt="\${producto.nombre}" loading="lazy" onerror="this.parentElement.parentElement.style.display='none'"></div>
+                            <div class="producto-nombre-galeria">\${producto.nombre}</div>
+                            <div class="producto-overlay">👁️ Ver</div>
+                        \`;
+                        item.addEventListener('click', () => abrirModalProducto(producto.id));
+                        galeria.appendChild(item);
+                    });
+                }
+        
+                let productoActual = null;
+        
+                function abrirModalProducto(productoId) {
+                    const producto = productos.find(p => p.id === productoId);
+                    if (!producto) return;
+                    productoActual = producto;
+                    document.getElementById('modalImagen').src = producto.imagen;
+                    document.getElementById('modalNombre').textContent = producto.nombre;
+                    document.getElementById('modalReferencia').textContent = '📋 ' + producto.referencia;
+                    document.getElementById('modalDescripcion').textContent = producto.descripcion;
+                    document.getElementById('modalPrecio').textContent = '💰 ' + producto.precio;
+                    document.getElementById('modalTipo').textContent = '🏷️ ' + producto.tipo;
+                    document.getElementById('modalProducto').classList.add('activo');
+                    document.body.style.overflow = 'hidden';
+                }
+        
+                function cerrarModalProducto() {
+                    document.getElementById('modalProducto').classList.remove('activo');
+                    document.body.style.overflow = 'auto';
+                }
+        
+                function abrirModalContacto() {
+                    if (!productoActual) return;
+                    const p = productoActual;
+                    document.getElementById('productoSeleccionado').innerHTML = \`
+                        <strong>\${p.nombre}</strong><br>
+                        📋 Ref: \${p.referencia}<br>
+                        💰 Precio: \${p.precio}<br>
+                        🏷️ Tipo: \${p.tipo}
+                    \`;
+                    document.getElementById('whatsappLink').href = 'https://wa.me/' + CONFIG.whatsapp + '?text=¡Hola! Me interesa el producto:%0A%0A*' + encodeURIComponent(p.nombre) + '*%0A📋 Ref: ' + p.referencia + '%0A💰 Precio: ' + p.precio + '%0A%0A¿Podrían darme más información?';
+                    document.getElementById('emailLink').href = 'mailto:' + CONFIG.email + '?subject=Consulta sobre ' + encodeURIComponent(p.nombre) + '&body=Hola,%0D%0A%0D%0AMe gustaría recibir más información sobre:%0D%0A%0D%0ANombre: ' + encodeURIComponent(p.nombre) + '%0D%0ARef: ' + p.referencia + '%0D%0APrecio: ' + p.precio + '%0D%0ATipo: ' + p.tipo + '%0D%0ADescripción: ' + encodeURIComponent(p.descripcion);
+                    document.getElementById('modalContacto').classList.add('activo');
+                }
+        
+                function cerrarModalContacto() {
+                    document.getElementById('modalContacto').classList.remove('activo');
+                }
+        
+                function abrirModalCompartir() {
+                    document.getElementById('modalCompartir').classList.add('activo');
+                    document.body.style.overflow = 'hidden';
+                    generarQR();
+                }
+        
+                function cerrarModalCompartir() {
+                    document.getElementById('modalCompartir').classList.remove('activo');
+                    document.body.style.overflow = 'auto';
+                }
+        
+                function generarQR() {
+                    document.getElementById('qrCode').innerHTML = '';
+                    new QRCode(document.getElementById('qrCode'), {
+                        text: window.location.href,
+                        width: 150,
+                        height: 150,
+                        colorDark: '#764ba2',
+                        colorLight: '#ffffff'
+                    });
+                }
+        
+                function compartirPorWhatsApp() {
+                    window.open('https://wa.me/?text=¡Mira este catálogo! 👀%0A%0A' + CONFIG.negocio.nombre + '%0A%0A' + window.location.href, '_blank');
+                }
+        
+                function copiarEnlace() {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        const c = document.getElementById('copiadoConfirmacion');
+                        c.style.display = 'block';
+                        setTimeout(() => c.style.display = 'none', 2500);
+                    });
+                }
+        
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { cerrarModalProducto(); cerrarModalContacto(); cerrarModalCompartir(); }
+                });
+        
+                document.getElementById('modalProducto').addEventListener('click', function(e) { if (e.target === this) cerrarModalProducto(); });
+                document.getElementById('modalContacto').addEventListener('click', function(e) { if (e.target === this) cerrarModalContacto(); });
+                document.getElementById('modalCompartir').addEventListener('click', function(e) { if (e.target === this) cerrarModalCompartir(); });
+        
+                window.onload = function() {
+                    generarGaleria();
+                };
+            <\/script>
+        
+        </body>
+        </html>`;
+        }
+
+        // ==========================================
+        // COPIAR CÓDIGO
+        // ==========================================
+        function copiarCodigo() {
+            const textarea = document.getElementById('codigoHTML');
+            textarea.select();
+            document.execCommand('copy');
+            alert('✅ ¡Código copiado al portapapeles!');
+        }
+
+        // ==========================================
+        // DESCARGAR HTML
+        // ==========================================
+        function descargarHTML() {
+            const codigo = archivosGenerados.html;
+            const blob = new Blob([codigo], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // DESCARGAR SITEMAP
+        // ==========================================
+        function descargarSitemap() {
+            const codigo = archivosGenerados.sitemap;
+            const blob = new Blob([codigo], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sitemap.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // DESCARGAR ROBOTS.TXT
+        // ==========================================
+        function descargarRobots() {
+            const codigo = archivosGenerados.robots;
+            const blob = new Blob([codigo], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'robots.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // INICIALIZAR
+        // ==========================================
+        window.onload = function() {
+            generarFormularios();
+        };
+    </script>
+
+</body>
+</html>
